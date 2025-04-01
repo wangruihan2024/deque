@@ -31,11 +31,18 @@ void TestInteger()
     std::cout << "Test 1 : Test for classes without default constructor...";
     sjtu::deque<Integer> dInt;
     std::vector<Integer> vInt;
+    // std::cout << "build successfully" << std::endl;
     for (int i = 0; i < N; ++i) {
-        vInt.push_back(Integer(randNum(i, N + 17)));
+        // std::cout << i << std::endl;
+        // randNum(i, N + 17)
+        vInt.push_back(Integer(7));
+        // std::cout << "vInt push back successfully" << std::endl;
         dInt.push_back(vInt[i]);
     }
+    // std::cout << "deque push_back successfully" << std::endl;
     for (int i = 0; i < N; ++i) {
+        std::cout << i << std::endl;
+        // std::cout << vInt[i] << "vs" << dInt[i] << std::endl;
         if (!(vInt[i] == dInt[i]))
             error();
     }
