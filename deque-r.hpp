@@ -23,7 +23,6 @@ template<class T> class double_list{
           data = nullptr;
         pre = other.pre, next = other.next;
       }
-      Node(T* val_ptr) : data(val_ptr), pre(nullptr), next(nullptr) {}
       Node& operator=(const Node& other) {
         if(this == &other)
           return *this;
@@ -94,7 +93,7 @@ template<class T> class double_list{
       // --------------------------
       iterator() : current(nullptr), current_list(nullptr){}
       iterator(Node *current_, const double_list *current_list_) : current(current_), current_list(current_list_) {}
-      iterator(const iterator &t) : current(t.current), current_list(t.current_list) {}
+      iterator(const iterator &t) = default;
       ~iterator(){}
           /**
        * iter++
@@ -132,7 +131,7 @@ template<class T> class double_list{
       */
       T &operator*() const {
         if(current == nullptr || current->data == nullptr)
-          throw std::out_of_range("invalid dereference at end()");
+          throw invalid_iterator();
         return *(current->data);
       }
           /**
@@ -167,7 +166,7 @@ template<class T> class double_list{
     */
     iterator erase(iterator pos){
       if(pos == iterator() || pos == end() || this != pos.current_list) {
-        throw std::out_of_range("erase is invalid");
+        throw invalid_iterator();
         return end();
       }
       // 不需要考虑删除头节点 因为前面有判断
@@ -175,12 +174,12 @@ template<class T> class double_list{
         delete_head();
         return begin();
       }
+      s--;
       Node *tmp = pos.current, *tmp_ = tmp->next;
       tmp->pre->next = tmp->next;
       tmp->next->pre = tmp->pre;
       delete tmp;
       //把tmp_定义在这里next就错了
-      s--;
       return iterator(tmp_, this);
     }
     /**
@@ -188,7 +187,7 @@ template<class T> class double_list{
     */
     iterator insert(iterator pos, const T &val) {
       if(pos == iterator() || pos.current_list != this)
-        throw std::out_of_range("insert position invalid");
+        throw invalid_iterator();
       if(pos == begin()) {
         insert_head(val);
         return begin();
@@ -197,21 +196,22 @@ template<class T> class double_list{
         insert_tail(val);
         return --end();
       }
+      s++;
       Node* it_ = pos.current;
       Node* substitute = new Node(new T(val), it_->pre, it_);
       if(it_->pre)
         it_->pre->next = substitute;
       it_->pre = substitute;
-      s++;
       return iterator(substitute, this);
     }
     void insert_head(const T &val){
+      s++;
       Node* new_node = new Node(new T(val), nullptr, head);
       head->pre = new_node;
       head = new_node;
-      s++;
     }
     void insert_tail(const T &val){
+      s++;
       Node *new_node = new Node(new T(val), tail->pre, tail);
       if(!tail->pre) //原来是空的
         head = new_node;
@@ -222,20 +222,21 @@ template<class T> class double_list{
         
       tail->pre = new_node;
       // new_node->next = tail;
-      s++;
+      
     }
     void delete_head(){
       if (empty())
-        throw std::out_of_range("delete_head on empty list");
+        throw container_is_empty();
+      s--;
       Node *old = head;
       head = head->next;
       head->pre = nullptr;
       delete old;
-      s--;
     }
     void delete_tail(){
       if (empty()) 
-        throw std::out_of_range("delete_tail on empty list");
+        throw container_is_empty();
+      s--;
       Node *last = tail->pre;
       if (last->pre)
         last->pre->next = tail;
@@ -243,10 +244,9 @@ template<class T> class double_list{
         head = tail;
       tail->pre = last->pre;
       delete last;
-      s--;
     }
     bool empty () const{
-      return (s == 0) || (head == tail);
+      return (head == tail);
     }
     void clear() {
       Node* tmp = head;
@@ -260,14 +260,14 @@ template<class T> class double_list{
       // head = tail;
       s = 0;
     }
-    void print() const {
-      Node *tmp = head;
-      while(tmp) {
-        std::cout << *tmp->data << " ";
-        tmp = tmp->next;
-      }
-      std::cout << std::endl;
-    }
+    // void print() const {
+    //   Node *tmp = head;
+    //   while(tmp) {
+    //     std::cout << *tmp->data << " ";
+    //     tmp = tmp->next;
+    //   }
+    //   std::cout << std::endl;
+    // }
     //-----------------------------
     size_t size() { return s; }
     //merge version1
@@ -285,7 +285,7 @@ template<class T> class double_list{
     }
     static std::pair<double_list, double_list> split(double_list &a, size_t split_pos) { 
       if(a.size() < split_pos)
-        throw std::out_of_range("split position doesn't exist");
+        throw runtime_error();
       if(split_pos == 0)
         return std::make_pair(double_list(), a);
       else if(split_pos == a.size())
@@ -323,23 +323,8 @@ public:
   size_t sum_s;
   size_t chunk_s;
   class const_iterator;
-  size_t standard_size() {
+  size_t standard_size() const {
     return floor(sqrt(sum_s)) + 1;
-  }
-  size_t init_size(const iterator& it) {
-    size_t cnt = 0;
-    list_it_type list_it_ = data.begin();
-    while(list_it_ != it.list_it_ && list_it_ != data.end()) {
-      cnt += list_it_->size();
-      list_it_++;
-    }
-    if(list_it_ == data.end()) {
-      if(it.list_it_ == data.end())
-        return cnt;
-      return -1;
-    }
-    cnt += double_list<T>::init_size(*list_it_, it.chunk_it);
-    return cnt;
   }
   //------------------------------
   class iterator {
@@ -349,7 +334,7 @@ public:
     chunk_it_type chunk_it;
     //--------------------------
     iterator() : dq_it(nullptr), list_it(), chunk_it(){}
-    iterator(deque* dq_it_, list_it_type list_it_, chunk_it_type chunk_it_) : dq_it(dq_it_), list_it(list_it_), chunk_it(chunk_it_){} 
+    iterator(deque* dq_it_, const list_it_type& list_it_, const chunk_it_type &chunk_it_) : dq_it(dq_it_), list_it(list_it_), chunk_it(chunk_it_){} 
     /**
      * return a new iterator which points to the n-next element.
      * if there are not enough elements, the behaviour is undefined.
@@ -357,14 +342,14 @@ public:
      */
     iterator operator+(const int &n) const {
       if(*this == iterator())
-        throw std::out_of_range("+ is invalid");
+        throw invalid_iterator();
       if(n == 0)
         return *this;
-      else if(n < 0)
+      if(n < 0)
         return (*this) - (-n);
       // 注意这里是可以--end()的 所以对end的判断要写在这个之后
-      else if(*this == dq_it->end())
-        throw std::out_of_range("+ is invalid");
+      if(*this == dq_it->end())
+        throw index_out_of_bound();
       int n_ = n;
       list_it_type list_it_ = list_it;
       chunk_it_type chunk_it_ = chunk_it;
@@ -375,33 +360,29 @@ public:
       if(n_ == 0)
         return iterator(dq_it, list_it_, chunk_it_);
       if(list_it_ == --(dq_it->data.end())) {
-        if(n_ > 1)
-          throw std::out_of_range("add too much");
+        if(n_ != 1)
+          throw index_out_of_bound();
         else
           return (dq_it)->end();
-      }else {
+      } else 
         list_it_++;
-        while(n_ > list_it_->size() && list_it_ != (dq_it->data.end())) {
-          n_ -= list_it->size();
-          list_it_++;
-        }
-        if(list_it_ == (dq_it->data.end())) {
-          if(n_ > 1)
-            throw std::out_of_range("add too much");
-          else
-            return (dq_it)->end();
-        }
-        chunk_it_ = list_it_->begin();
-        while(n_ > 1) {
-          chunk_it_++;
-          n_--;
-        }
-        return iterator(dq_it, list_it_, chunk_it_);
+      while(n_ > list_it_->size() && list_it_ != (dq_it->data.end())) {
+        n_ -= list_it_->size();
+        list_it_++;
       }
+      if(list_it_ == (dq_it->data.end())) {
+        if(n_ > 1)
+          throw index_out_of_bound();
+        else
+          return (dq_it)->end();
+      }
+      chunk_it_ = list_it_->begin();
+      chunk_it_ = dq_it->locate_in_chunk(list_it_, n_ - 1);
+      return iterator(dq_it, list_it_, chunk_it_);
     }
     iterator operator-(const int &n) const {
       if(*this == iterator())
-        throw std::out_of_range("- is invalid"); //指向begin的之后未必直接throw
+        throw invalid_iterator(); //指向begin的之后未必直接throw
       if(n == 0)
         return *this;
       else if(n < 0)
@@ -419,20 +400,16 @@ public:
         if(n_ == 0)
           return iterator(dq_it, list_it_, chunk_it_);
         if(list_it_ == (dq_it->data.begin())) 
-          throw std::out_of_range("minus too much");
+          throw index_out_of_bound();
         list_it_--;
       }
       while(n_ > int(list_it_->size()) && list_it_ != dq_it->data.begin()) {
         n_ -= list_it_->size();
         list_it_--;
       }
-      if (n_ > list_it_->size())
-        throw std::out_of_range("minus too much");
-      chunk_it_ = --list_it_->end();
-      while(n_ > 0) {
-        chunk_it_ --;
-        n_--;
-      }
+      if (n_ > int(list_it_->size()))
+        throw index_out_of_bound();
+      chunk_it_ = dq_it->locate_in_chunk(list_it_, list_it_->size() - n_);
       return iterator(dq_it, list_it_, chunk_it_);
     }
     /**
@@ -442,20 +419,20 @@ public:
      */
     int operator-(const iterator &rhs) const {
       if(dq_it != rhs.dq_it)
-        throw std::out_of_range("distance from two deque");
+        throw invalid_iterator();
       if(list_it == rhs.list_it) {
         if(list_it == dq_it->data.end())
           return 0;
         return static_cast<int>(double_list<T>::init_size(*(this->list_it), this->chunk_it)) - double_list<T>::init_size(*(rhs.list_it), rhs.chunk_it);
       }
-      bool greater - double_list<double_list<T>>::init_size(dq_it->data, this->list_it) > double_list<double_list<T>>::init_size(dq_it->data. rhs.list_it);
-      list_it_type ITX this->list_it, ITY = rhs.list_it;
+      bool greater = double_list<double_list<T>>::init_size(dq_it->data, this->list_it) > double_list<double_list<T>>::init_size(dq_it->data, rhs.list_it);
+      list_it_type ITX = this->list_it, ITY = rhs.list_it;
       chunk_it_type itx = this->chunk_it, ity = rhs.chunk_it;
       if(greater) {
         std::swap(ITX, ITY);
         std::swap(itx, ity);
       }
-      int res - static_cast<int>(ITX->size()) - double_list<T>::init_size(*ITX, itx);
+      int res = static_cast<int>(ITX->size()) - double_list<T>::init_size(*ITX, itx);
       if(ITY != dq_it->data.end())
         res += double_list<T>::init_size(*ITY, ity);
       else
@@ -565,51 +542,47 @@ public:
      */
     const_iterator operator+(const int &n) const {
       if(*this == iterator())
-        throw std::out_of_range("+ is invalid");
+        throw invalid_iterator();
       if(n == 0)
         return *this;
-      else if(n < 0)
+      if(n < 0)
         return (*this) - (-n);
       // 注意这里是可以--end()的 所以对end的判断要写在这个之后
-      else if(*this == dq_it->end())
-        throw std::out_of_range("+ is invalid");
+      if(*this == dq_it->end())
+        throw index_out_of_bound();
       int n_ = n;
       list_it_type list_it_ = list_it;
       chunk_it_type chunk_it_ = chunk_it;
-      while(n_ > 0 && chunk_it_ != list_it->end()) {
+      while(n_ > 0 && chunk_it_ != --(list_it_->end())) {
         chunk_it_++;
         n_--;
       }
       if(n_ == 0)
         return const_iterator(dq_it, list_it_, chunk_it_);
       if(list_it_ == --(dq_it->data.end())) {
-        if(n_ > 1)
-          throw std::out_of_range("add too much");
+        if(n_ != 1)
+          throw index_out_of_bound();
         else
           return (dq_it)->cend();
-      }else {
+      } else 
         list_it_++;
-        while(n_ > (*list_it_).size() && list_it_ != (dq_it->data.end())) {
-          n_ -= (*list_it_).size();
-          list_it_++;
-        }
-        if(list_it_ == (dq_it->data.end())) {
-          if(n_ > 1)
-            throw std::out_of_range("add too much");
-          else
-            return (dq_it)->cend();
-        }
-        chunk_it_ = list_it_->begin();
-        while(n_ > 1) {
-          chunk_it_++;
-          n_--;
-        }
-        return const_iterator(dq_it, list_it_, chunk_it_);
+      while(n_ > list_it_->size() && list_it_ != (dq_it->data.end())) {
+        n_ -= list_it_->size();
+        list_it_++;
       }
+      if(list_it_ == (dq_it->data.end())) {
+        if(n_ > 1)
+          throw index_out_of_bound();
+        else
+          return (dq_it)->cend();
+      }
+      chunk_it_ = list_it_->begin();
+      chunk_it_ = dq_it->locate_in_chunk(list_it_, n_ - 1);
+      return const_iterator(dq_it, list_it_, chunk_it_);
     }
     const_iterator operator-(const int &n) const {
       if(*this == iterator())
-        throw std::out_of_range("- is invalid"); //指向begin的之后未必直接throw
+        throw invalid_iterator(); //指向begin的之后未必直接throw
       if(n == 0)
         return *this;
       else if(n < 0)
@@ -627,7 +600,7 @@ public:
         if(n_ == 0)
           return const_iterator(dq_it, list_it_, chunk_it_);
         if(list_it_ == (dq_it->data.begin())) 
-          throw std::out_of_range("minus too much");
+          throw index_out_of_bound();
         list_it_--;
       }
       while(n_ > (int)list_it_->size() && list_it_ != dq_it->data.begin()) {
@@ -635,12 +608,8 @@ public:
         list_it_--;
       }
       if (n_ > list_it_->size())
-        throw std::out_of_range("minus too much");
-      chunk_it_ = --list_it_->end();
-      while(n_ > 0) {
-        chunk_it_ --;
-        n_--;
-      }
+        throw index_out_of_bound();
+      chunk_it_ = dq_it->locate_in_chunk(list_it_, list_it_->size() - n_);
       return const_iterator(dq_it, list_it_, chunk_it_);
     }
     /**
@@ -650,20 +619,20 @@ public:
      */
     int operator-(const const_iterator &rhs) const {
       if(dq_it != rhs.dq_it)
-        throw std::out_of_range("distance from two deque");
+        throw invalid_iterator();
       if(list_it == rhs.list_it) {
         if(list_it == dq_it->data.end())
           return 0;
         return static_cast<int>(double_list<T>::init_size(*(this->list_it), this->chunk_it)) - double_list<T>::init_size(*(rhs.list_it), rhs.chunk_it);
       }
-      bool greater - double_list<double_list<T>>::init_size(dq_it->data, this->list_it) > double_list<double_list<T>>::init_size(dq_it->data. rhs.list_it);
-      list_it_type ITX this->list_it, ITY = rhs.list_it;
+      bool greater = double_list<double_list<T>>::init_size(dq_it->data, this->list_it) > double_list<double_list<T>>::init_size(dq_it->data, rhs.list_it);
+      list_it_type ITX = this->list_it, ITY = rhs.list_it;
       chunk_it_type itx = this->chunk_it, ity = rhs.chunk_it;
       if(greater) {
         std::swap(ITX, ITY);
         std::swap(itx, ity);
       }
-      int res - static_cast<int>(ITX->size()) - double_list<T>::init_size(*ITX, itx);
+      int res = static_cast<int>(ITX->size()) - double_list<T>::init_size(*ITX, itx);
       if(ITY != dq_it->data.end())
         res += double_list<T>::init_size(*ITY, ity);
       else
@@ -753,14 +722,31 @@ public:
   };
 
   //------------------------------
-
+  size_t init_size(const typename deque::iterator& it) {
+    size_t cnt = 0;
+    list_it_type list_it_ = data.begin();
+    while(list_it_ != it.list_it && list_it_ != data.end()) {
+      cnt += list_it_->size();
+      list_it_++;
+    }
+    if(list_it_ == data.end()) {
+      if(it.list_it == data.end())
+        return cnt;
+      return -1;
+    }
+    cnt += double_list<T>::init_size(*list_it_, it.chunk_it);
+    return cnt;
+  }
   //------------------------------
   deque() {
     sum_s = 0;
     chunk_s = standard_size();
   }
-  deque(const deque &other) {
+  deque(const deque &other) : deque() {
     *this = other;
+  }
+  deque(deque&& other) : deque() {
+    *this = std::move(other);
   }
   ~deque() {}
   deque &operator=(const deque &other) {
@@ -774,7 +760,7 @@ public:
     return *this;
   }
   //------------------------------
-  bool if_split(const list_it_type pos) {
+  bool if_split(const list_it_type& pos) {
     return (pos->size() > standard_size() * spilt_index);
   }
   bool if_merge(const list_it_type pos) {
@@ -783,10 +769,13 @@ public:
     //考虑首位情况不merge
     return (pos->size() < standard_size() * merge_index);
   }
-  list_it_type do_split(const list_it_type pos) {
+  bool if_rearrange() {
+    size_t std_size = standard_size();
+    return (chunk_s < std_size * merge_index || chunk_s > std_size * spilt_index);
+  }
+  list_it_type do_split(const list_it_type& pos) {
     double_list<T> split_front, split_back;
-    split_front = double_list<T>::split(*pos, (pos->size() + 1) / 2).first;
-    split_back = double_list<T>::split(*pos, (pos->size() + 1) / 2).second;
+    std::tie(split_front, split_back) = double_list<T>::split(*pos, (pos->size() + 1) / 2);
     list_it_type substitute = data.erase(pos);
     substitute = data.insert(substitute, split_back);
     substitute = data.insert(substitute, split_front);
@@ -828,22 +817,31 @@ public:
     size_t ans = -1;
     if(if_split(list_pos)) {
       if(ans == -1)
-        ans = list_distance(pos);
+        ans = init_size(pos);
       list_pos = do_split(list_pos);
-    }else if(if_merge(list_pos)) {
+    }
+    if(if_merge(list_pos)) {
       if(ans == -1)
-        ans = list_distance(pos);
+        ans = init_size(pos);
       list_pos = do_merge(list_pos);
     }
     return ans;
   }
   iterator at_iterator(const size_t &pos) { 
     if(pos > sum_s)
-      throw std::out_of_range("at_interator invalid");
-    if(2 * pos < size())
+      throw index_out_of_bound();
+    if(pos < size() - pos)
       return begin() + pos;
     else
       return end() - (size() - pos);
+  }
+  const_iterator at_iterator(const size_t &pos) const {
+    if(pos > sum_s)
+      throw index_out_of_bound();
+    if(2 * pos < size())
+      return cbegin() + pos;
+    else
+      return cend() - (size() - pos);
   }
   //及时删掉空的chunk
   list_it_type check_empty(list_it_type pos) {
@@ -854,6 +852,21 @@ public:
     else
       return pos;
   }
+  chunk_it_type locate_in_chunk(const list_it_type& ck, size_t n) const {
+    chunk_it_type it;
+    if(n < ck->size() - n) {
+      it = ck->begin();
+      while(n--)
+        it++;
+      return it;
+    }else {
+      it = ck->end();
+      n = ck->size() - n;
+      while(n--)
+        it--;
+      return it;
+    }
+  }
   //------------------------------
   /**
    * access a specified element with bound checking.
@@ -861,12 +874,12 @@ public:
    */
   T &at(const size_t &pos) {
       if(pos >= sum_s)
-        throw std::out_of_range("at points to invalid");
+        throw index_out_of_bound();
       return *(at_iterator(pos));
   }
   const T &at(const size_t &pos) const {
     if(pos >= sum_s)
-        throw std::out_of_range("at points to invalid")
+      throw index_out_of_bound();
     return *(at_iterator(pos));
   }
   T &operator[](const size_t &pos) {
@@ -955,7 +968,7 @@ public:
    */
   iterator insert(iterator pos, const T &value) {
     if(pos.dq_it != this || pos == iterator())
-      throw std::out_of_range("iterator is invalid");
+      throw invalid_iterator();
     if(empty()) {
       data.insert_tail(double_list<T>());
       pos = end();
@@ -980,7 +993,7 @@ public:
    */
   iterator erase(iterator pos) {
     if(this != pos.dq_it || pos == end() || empty())
-      throw std::out_of_range("the erase pos is invalid");
+      throw invalid_iterator();
     size_t shape_result = shape(pos);
     if(shape_result != size_t(-1))
       pos = at_iterator(shape_result);
@@ -992,7 +1005,7 @@ public:
       else
         chunk_it_ = list_it_->begin();
     }else if(chunk_it_ == list_it_->end()) {
-      if(list_it_ == --data.end())
+      if(++list_it_ == data.end())
         chunk_it_ = chunk_it_type();
       else
         chunk_it_ = list_it_->begin();
@@ -1016,7 +1029,7 @@ public:
    */
   void pop_back() {
     if(empty())
-      throw std::out_of_range("pop_back is invalid");
+      throw container_is_empty();
     (--data.end())->delete_tail();
     check_empty(--data.end());
     sum_s--;
@@ -1038,10 +1051,11 @@ public:
    */
   void pop_front() {
     if(empty())
-      throw std::out_of_range("pop_front is invalid");
+      throw container_is_empty();
+    sum_s--;
     data.begin()->delete_head();
     check_empty(data.begin());
-    sum_s--;
+    
   }
 };
 

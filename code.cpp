@@ -1,220 +1,324 @@
-//Provided by desire2020/Steve Lu
 
-/***********************************************************************
-Hint: This test case almost completely tests the correctness of your deque.
-So if all tests are passed, feel free to enhance your performance! :)
-Yours Sincerely. Rabbit.
-***********************************************************************/
-#include "class-integer.hpp"
-#include "class-matrix.hpp"
-#include "class-bint.hpp"
 #include <iostream>
-#include <vector>
-#include <deque>
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
 #include "deque.hpp"
+#include "exceptions.hpp"
 
-long long randNum(long long x,long long maxNum)
-{
-    x = (x * 10007) % maxNum;
-    return x + 1;
-} 
-const size_t N = 10005LL;
 
-void error()
-{
-    std::cout << "Error, mismatch found." << std::endl;
-    exit(0);
+/***************************/
+bool need_to_check_throw = 1;
+bool good_complexity = 1;//if the complexity is N^2, change to 0
+int N = good_complexity ? 50000 : 1000;
+/***************************/
+
+
+class T{
+private:
+    int x;
+public:
+    T(int x):x(x){}
+    int num()const {return x;}
+    void change(int y){
+        x = y;
+    }
+};
+bool operator == (const T &a, const T &b){
+    return a.num() == b.num();
 }
-
-void TestInteger()
-{
-    std::cout << "Test 1 : Test for classes without default constructor...";
-    sjtu::deque<Integer> dInt;
-    std::vector<Integer> vInt;
-    // std::cout << "build successfully" << std::endl;
-    for (int i = 0; i < N; ++i) {
-        // std::cout << i << std::endl;
-        // randNum(i, N + 17)
-        vInt.push_back(Integer(7));
-        // std::cout << "vInt push back successfully" << std::endl;
-        dInt.push_back(vInt[i]);
-    }
-    // std::cout << "deque push_back successfully" << std::endl;
-    for (int i = 0; i < N; ++i) {
-        std::cout << i << std::endl;
-        // std::cout << vInt[i] << "vs" << dInt[i] << std::endl;
-        if (!(vInt[i] == dInt[i]))
-            error();
-    }
-    std::cout << "Correct." << std::endl;
+bool operator != (const T &a, const T &b){
+    return a.num() != b.num();
 }
-void TestMatrix()
-{
-    std::cout << "Test 2 : Test for Matrix, a class with dynamic members...";
-    sjtu::deque<Diamond::Matrix<double>> dM;
-    std::vector<Diamond::Matrix<double>> vM;
-    for (int i = 0; i < N; ++i) {
-        vM.push_back(Diamond::Matrix<double>(randNum(i + 1, 10 + 7), randNum(i + 2, 10 + 7), randNum(i + 3, (100 + 17)) * 1.0 / randNum(i, 17)));
-        dM.push_back(vM[i]);
+sjtu::deque<T> q;
+std::deque<T> stl;
+sjtu::deque<T>::iterator it_q;
+std::deque<T>::iterator it_stl;
+sjtu::deque<T>::const_iterator _it_q;
+std::deque<T>::const_iterator _it_stl;
+bool equal(){
+    if(q.size() != stl.size()) return 0;
+    if(q.empty() != stl.empty()) return 0;
+    int cnt = 0;
+    for(it_q = q.begin(), it_stl = stl.begin(); it_q != q.end() || it_stl != stl.end(); it_q++, it_stl++){
+        if(*it_q != *it_stl) {
+            printf("cnt = %d\n",cnt);
+            return 0;
+        }
+        cnt++;
     }
-    for (int i = 0; i < N; ++i) {
-        if (!(vM[i] == dM[i]))
-            error();
-    }
-    std::cout << "Correct." << std::endl;
+    return 1;
 }
-
-void TestBint()
-{
-    std::cout << "Test 3 : Test for big integer...";
-    sjtu::deque<Util::Bint> dBint;
-    std::vector<Util::Bint> vBint;
-    for (long long i = 1LL << 50; i < (1LL << 50) + N; ++i) {
-        vBint.push_back(Util::Bint(i) * randNum(i, (1 << 25) ));
-        dBint.push_back(vBint.back());
+void test1(){
+    printf("test1: push & pop                    ");
+    for(int i=1;i<=N;i++){
+        if(i % 10 <= 3) q.push_back(T(i)), stl.push_back(T(i));else
+        if(i % 10 <= 7) q.push_front(T(i)), stl.push_front(T(i));else
+        if(i % 10 <= 8) q.pop_back(), stl.pop_back();else
+        if(i % 10 <= 9) q.pop_front(), stl.pop_front();
     }
-
-    for (int i = 0; i < N; ++i) {
-        if (!(vBint[i] == dBint[i]))
-            error();
+    if(!equal()){puts("Wrong Answer");return;}
+    while (!q.empty()){
+        q.pop_back();
+        stl.pop_back();
     }
-    std::cout << "Correct." << std::endl;
+    puts("Accept");
 }
+void test2(){
+    printf("test2: at & [] & front & back        ");
+    int flag = 0;
+    try{
+        int t = q.front().num();
+    }catch(...){flag ++;}
 
-void TestCopyConstructorAndOperatorEqu()
-{
-    std::cout << "Test 4 : Test for copy constructor and operator=...";
-    sjtu::deque<long long> *pInt;
-    pInt = new sjtu::deque<long long>;
-    for (long long i = 0; i < N; ++i) {
-        pInt -> push_back(i);
+    try{
+        int t = q.back().num();
+    }catch(...){flag ++;}
+    if(flag != 2 && need_to_check_throw){puts("Wrong Answer");return;}
+    for(int i=1;i<=N;i++){
+        if(i % 10 <= 3) q.push_back(T(i)), stl.push_back(T(i));else
+        if(i % 10 <= 7) q.push_front(T(i)), stl.push_front(T(i));else
+        if(i % 10 <= 8) q.pop_back(), stl.pop_back();else
+        if(i % 10 <= 9) q.pop_front(), stl.pop_front();
     }
-    sjtu::deque<long long> &dInt = *pInt;
-    sjtu::deque<long long> dualInt(dInt);
-    sjtu::deque<long long> dualInt_oper;
-    dualInt_oper = dInt;
-    for (long long i = 0; i < N; ++i)
+    flag = 0;
+    try{
+        int t = (q.at(q.size() + 100)).num();
+    }catch(...){flag = 1;}
+    if(flag != 1 && need_to_check_throw){puts("Wrong Answer");return;}
+    int num = q.size();
+    for(int i=0;i<100;i++)
     {
-        if (dualInt[i] != dInt[i] || dualInt_oper[i] != dInt[i])
-            error();
+        int t = rand() % num;
+        if(q[t] != stl[t] || q.at(t) != stl.at(t)){puts("Wrong Answer");return;}
     }
-    dualInt_oper = dualInt_oper;
-    delete pInt;
-    for (long long i = 0; i < N; ++i)
+    if(q.front() != stl.front() || q.back() != stl.back()){puts("Wrong Answer");return;}
+    puts("Accept");
+}
+void test3(){
+    printf("test3: itetator operation            ");
+    int num = q.size();
+    for(int i =1 ; i <= 1000; i++)
     {
-        if (dualInt_oper[i] != dualInt[i])
-            error();
+        int t1 = rand() % num;
+        int t2 = rand() % num;
+        if(*(q.begin() + t1) != *(stl.begin() + t1)){puts("Wrong Answer");return;}
+        if(t2 && *(q.end() - t2) != *(stl.end() - t2)){puts("Wrong Answer");return;}
+        if((q.begin() + t1) - (q.begin() + t2) != (t1 - t2)){puts("Wrong Answer");return;}
     }
-    std::cout << "Correct." << std::endl;
+    if((q.begin() + num) != q.end()) {puts("Wrong Answer");return;}
+    if((q.end() - num) != q.begin()) {puts("Wrong Answer");return;}
+    bool flag=0;
+    sjtu::deque<T> other;
+    try{
+        int t = q.begin() - other.begin();
+    }catch(...){
+        flag=1;
+    }
+    if(!flag && need_to_check_throw) {puts("Wrong Answer");return;}
+    it_q = q.begin();
+    it_stl = stl.begin();
+    for(int i=1;i<=10;i++){
+        int t = rand() % (num / 10);
+        it_q += t;
+        it_stl += t;
+        if(*it_q != *it_stl) {puts("Wrong Answer");return;}
+        if(it_q -> num() != it_stl -> num()) {puts("Wrong Answer");return;}
+    }
+    it_q = --q.end();
+    it_stl = --stl.end();
+    if(*it_q != *it_stl) {puts("Wrong Answer");return;}
+    for(int i=1;i<10;i++){
+        int t = rand() % (num / 10);
+        it_q -= t;
+        it_stl -= t;
+        if(*it_q != *it_stl) {puts("Wrong Answer");return;}
+        it_q -> change(t);;
+        it_stl -> change(t);
+        if(*it_q != *it_stl) {puts("Wrong Answer");return;}
+    }
+    if(!equal()) {puts("Wrong Answer");return;}
+    if (!(q.begin() + 10 == q.begin() +5 + 6 - 1)) {puts("Wrong Answer");return;}
+    sjtu::deque<T> pp;
+    if(q.end() == pp.end()){puts("Wrong Answer");return;}
+
+    int t = rand() % (q.size() - 1);
+    it_q = q.begin() + t;
+    it_stl = stl.begin() + t;
+    const sjtu::deque<T>::iterator it_q_const(++it_q);
+    const std::deque<T>::iterator it_stl_const(++it_stl);
+    if(*it_q_const != *it_stl_const){puts("Wrong Answer");return;}
+    if(it_q_const -> num() != it_stl_const -> num()){puts("Wrong Answer");return;}
+    it_q_const -> change(t);
+    it_stl_const -> change(t);
+    if(!equal()){puts("Wrong Answer");return;}
+    puts("Accept");
 }
 
-void TestIteratorSequenceAccess()
-{
-    std::cout << "Test 5 : Test for accessing the container in the order of the sequence, using iterator...";
-    sjtu::deque<long long> dInt;
-    for (long long i = 0; i < N; ++i) {
-        dInt.push_back(i);
+void test4(){
+    printf("test4: const_itetator operation      ");
+    const sjtu::deque<T> _q(q);
+    const std::deque<T> _stl(stl);
+    int num = _q.size();
+    for(int i =1 ; i <= 1000; i++)
+    {
+        int t1 = rand() % num;
+        int t2 = rand() % num;
+        if(*(_q.cbegin() + t1) != *(_stl.cbegin() + t1)){puts("Wrong Answer");return;}
+        if(t2 && *(_q.cend() - t2) != *(_stl.cend() - t2)){puts("Wrong Answer");return;}
+        if((_q.cbegin() + t1) - (_q.cbegin() + t2) != (t1 - t2)){puts("Wrong Answer");return;}
     }
-    sjtu::deque<long long> :: iterator it;
-    it = dInt.begin();
-    for (long long i = 0; i < N; ++i) {
-        if (!(*it == dInt[i]))
-            error();
-        ++it;
+    if((_q.cbegin() + num) != _q.cend()) {puts("Wrong Answer");return;}
+    if((_q.cend() - num) != _q.cbegin()) {puts("Wrong Answer");return;}
+    _it_q = _q.cbegin();
+    _it_stl = _stl.cbegin();
+    for(int i=1;i<=10;i++){
+        int t = rand() % (num / 10);
+        _it_q += t;
+        _it_stl += t;
+        if(*_it_q != *_it_stl) {puts("Wrong Answer");return;}
+        if(_it_q -> num() != _it_stl -> num()) {puts("Wrong Answer");return;}
     }
-    if (it != dInt.end())
-        error();
-    std::cout << "Correct." << std::endl;
+    _it_q = --_q.cend();
+    _it_stl = --_stl.cend();
+    if(*_it_q != *_it_stl) {puts("Wrong Answer");return;}
+    if (!(_q.cbegin() + 10 == _q.cbegin() +5 + 6 - 1)) {puts("Wrong Answer");return;}
+    puts("Accept");
 }
 
-void TestIteratorRandomAccess()
-{
-    std::cout << "Test 6 : Test for accessing the container randomly, using iterator...";
-    sjtu::deque<long long> dInt;
-    std::vector<long long> vInt;
-    for (long long i = 0; i < N; ++i) {
-        dInt.push_back(i);
-        vInt.push_back(i);
+void test5(){
+    printf("test5: erase & insert                ");
+    for(int i=1;i<=sqrt(N) && q.size()>=10;i++)
+    {
+        int t = rand() % (q.size() - 3);
+        it_q = q.begin() + t;
+        it_stl = stl.begin() + t;
+        it_q = q.erase(it_q);
+        it_stl = stl.erase(it_stl);
+        it_q = q.erase(it_q);
+        it_stl = stl.erase(it_stl);
+        it_q -> change(t);
+        it_stl -> change(t);
     }
-    for (long long i = 0; i < N; ++i) {
-        if (!(*(dInt.begin() + i) == vInt[i]))
-            error();
+    if(!equal()) {puts("Wrong Answer");return;}
+    it_q = q.erase(q.end() - 1);
+    it_stl = stl.erase(stl.end() - 1);
+    if(it_q != q.end()){puts("Wrong Answer");return;}
+    for(int i = 1; i <= sqrt(N); i++)
+    {
+        int t = rand() % q.size();
+        it_q = q.begin() + t;
+        it_stl = stl.begin() + t;
+        it_q = q.insert(it_q, T(t));
+        it_stl = stl.insert(it_stl, T(t));
+
+        it_q = q.insert(it_q, T(t + 1));
+        it_stl = stl.insert(it_stl, T(t + 1));
     }
-    std::cout << "Correct." << std::endl;
+    it_q = q.begin();
+    it_stl = stl.begin();
+    for(int i=1;i<=sqrt(N);i++)
+    {
+        it_q = q.insert(it_q, T(i));
+        it_stl = stl.insert(it_stl, T(i));
+    }
+    it_q = q.insert(q.end(), T(23333));
+    it_stl = stl.insert(stl.end(),T(23333));
+    if(it_q != q.end() - 1){puts("Wrong Answer");return;}
+    if(!equal()) {puts("Wrong Answer");return;}
+    puts("Accept");
 }
+void test6(){
+    printf("test6: clear & copy & assignment     ");
+    sjtu::deque<T> p(q), r;
+    r = q;
+    q.clear();
+    if(!q.empty() || q.size() != 0 || q.begin()!=q.end()){puts("Wrong Answer");return;}
+    q=q=q;
+    if(!q.empty() || q.size() != 0 || q.begin()!=q.end()){puts("Wrong Answer");return;}
+    for(int i=1;i<=100;i++)
+    {
+        int t = rand() % p.size();
+        p.push_back(T(t));
+        p.insert(p.begin() + t, T(t));
+        r.push_back(T(t));
+        r.insert(r.begin() + t, T(t));
+        stl.push_back(T(t));
+        stl.insert(stl.begin() + t, T(t));
+    }
 
-void TestInsertAndErase()
-{
-    std::cout << "Test 7 : Test for random erase and insert...";
-    sjtu::deque<long long> dInt;
-    std::vector<long long> vInt;
-    for (long long i = 0; i < N; ++i) {
-        dInt.push_back(i);
-        vInt.push_back(i);
-    }
-    vInt.insert(vInt.begin() + 2, 2);
-    dInt.insert(dInt.begin() + 2, 2);
-    vInt.insert(vInt.begin() + 23, 23);
-    dInt.insert(dInt.begin() + 23, 23);
-    vInt.insert(vInt.begin() + 233, 233);
-    dInt.insert(dInt.begin() + 233, 233);
-    vInt.erase(vInt.begin() + 2333);
-    dInt.erase(dInt.begin() + 2333);
-    for (long long i = 0; i < N; ++i) {
-        if (!(*(dInt.begin() + i) == vInt[i]))
-            error();
-    }
-    std::cout << "Correct." << std::endl;
+    q = p;
+    p.clear();
+    q=q=q=q;
+    if(!equal()) {puts("Wrong Answer");return;}
+    q.clear();
+    q = r;
+    r.clear();
+    q=q=q=q;
+    if(!equal()) {puts("Wrong Answer");return;}
+    puts("Accept");
 }
-
-void TestPopAndPush()
-{
-    std::cout << "Test 8 : Test for pop() and push()...";
-    sjtu::deque<long long> dInt, drInt;
-    std::vector<long long> vInt;
-    std::vector<long long> rInt;
-    for (size_t i = 0; i < 1114LL; ++i)
-    {
-        dInt.push_back(i);
-        vInt.push_back(i);
+void test7(){
+    printf("test7: complexity                    ");
+    int num = 500000;
+    static sjtu::deque<T> q;
+    for(int i = 0; i < num; i++) q.push_front(T(i));
+    for(int i = 0; i < num; i++) q.pop_front();
+    for(int i = 0; i < num; i++) q.push_back(T(i));
+    for(int i = 0; i < num; i++) q.pop_back();
+    for(int i = 0; i < num;i++){
+        if(i % 10 <= 3) q.push_back(T(i));else
+        if(i % 10 <= 7) q.push_front(T(i));else
+        if(i % 10 <= 8) q.pop_back();else
+        if(i % 10 <= 9) q.pop_front();
     }
-    for (size_t i = 0; i < 107LL; ++i)
+    int test_num = 5000000;
+    it_q = q.begin() + q.size() - 10;
+    for(int i = 0; i < test_num; i++)
     {
-        dInt.pop_back();
-        vInt.pop_back();
+        int tmp = (*it_q).num();
+        tmp = it_q -> num();
+        if(i % (test_num / 10) == 0) it_q = q.begin() + rand() % q.size();
     }
-    for (size_t i = 0; i < 1114LL; ++i)
-    {
-        drInt.push_front(i);
-        rInt.push_back(i);
+    for(int i = 0; i < N; i++){
+        it_q = q.begin() + rand() % q.size();
+        q.insert(it_q, T(rand()));
     }
-    for (size_t i = 0; i < 107LL; ++i)
-    {
-        drInt.pop_front();
-        rInt.pop_back();
+    for(int i = 0; i < N; i++){
+        it_q = q.begin() + rand() % q.size();
+        q.erase(it_q);
     }
-    for (size_t i = 0; i < 1007LL; ++i)
-    {
-        if (!(dInt[i] == vInt[i]))
-            error();
-        if (!(drInt[1006LL - i] == rInt[i]))
-            error();
+    for(int i = 0; i < N; i++){
+        int tmp = q[rand() % q.size()].num();
+        tmp = q.at(rand() % q.size()).num();
     }
-
-    std::cout << "Correct." << std::endl;
-
+    if(good_complexity){
+        q.clear();
+        for(int i=0;i<4000000;i++)
+            q.push_back(i);
+        while (q.size()>2010){
+            if(rand() % 2) q.pop_front();
+                else q.pop_back();
+        }
+        int tmp;
+        for(int i=0;i<2000000;i++){
+            tmp = q[2000].num();
+            tmp = q[1000].num();
+        }
+    }
+    puts("Accept");
 }
-
-int main()
-{
-    TestInteger();
-    TestMatrix();
-    TestBint();
-    TestCopyConstructorAndOperatorEqu();
-    TestIteratorSequenceAccess();
-    TestIteratorRandomAccess();
-    TestInsertAndErase();
-    TestPopAndPush();
-    std::cout << "Congratulations. Your submission has passed all correctness tests. Use valgrind to ensure that there ain't any memory leaks in your deque. Good job! :)" << std::endl;
-    return 0;
+int main(){
+    srand(time(NULL));
+    puts("test start:");
+    test1();//push & pop
+    test2();//at & [] & front & back
+    test3();//iterator operation
+    test4();//const_iterator operation
+    test5();//erase & insert
+    test6();//clear & copy & assignment
+    test7();//complexity
 }
