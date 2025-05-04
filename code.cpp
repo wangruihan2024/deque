@@ -109,8 +109,19 @@ void test3(){
         if(t2 && *(q.end() - t2) != *(stl.end() - t2)){puts("Wrong Answer");return;}
         if((q.begin() + t1) - (q.begin() + t2) != (t1 - t2)){puts("Wrong Answer");return;}
     }
+
+    // if(q.begin() + num)
+    //     std::cout << "index correct" << std::endl;
+
     if((q.begin() + num) != q.end()) {puts("Wrong Answer");return;}
+        std::cout << "1" << std::endl;
+    
+    //std::cout << "OK" << std::endl;
+
     if((q.end() - num) != q.begin()) {puts("Wrong Answer");return;}
+
+    // std::cout << "OK" << std::endl;
+    
     bool flag=0;
     sjtu::deque<T> other;
     try{
@@ -128,6 +139,7 @@ void test3(){
         if(*it_q != *it_stl) {puts("Wrong Answer");return;}
         if(it_q -> num() != it_stl -> num()) {puts("Wrong Answer");return;}
     }
+    std::cout << "2" << std::endl;
     it_q = --q.end();
     it_stl = --stl.end();
     if(*it_q != *it_stl) {puts("Wrong Answer");return;}
@@ -140,11 +152,12 @@ void test3(){
         it_stl -> change(t);
         if(*it_q != *it_stl) {puts("Wrong Answer");return;}
     }
+     std::cout << "3" << std::endl;
     if(!equal()) {puts("Wrong Answer");return;}
     if (!(q.begin() + 10 == q.begin() +5 + 6 - 1)) {puts("Wrong Answer");return;}
     sjtu::deque<T> pp;
     if(q.end() == pp.end()){puts("Wrong Answer");return;}
-
+     std::cout << "4" << std::endl;
     int t = rand() % (q.size() - 1);
     it_q = q.begin() + t;
     it_stl = stl.begin() + t;
@@ -155,6 +168,7 @@ void test3(){
     it_q_const -> change(t);
     it_stl_const -> change(t);
     if(!equal()){puts("Wrong Answer");return;}
+     std::cout << "5" << std::endl;
     puts("Accept");
 }
 
@@ -311,14 +325,17 @@ void test7(){
     }
     puts("Accept");
 }
-int main(){
-    srand(time(NULL));
-    puts("test start:");
-    test1();//push & pop
-    test2();//at & [] & front & back
-    test3();//iterator operation
-    test4();//const_iterator operation
-    test5();//erase & insert
-    test6();//clear & copy & assignment
-    test7();//complexity
+int main() {
+    sjtu::deque<int> d;
+    for(int i=0; i<10; i++)
+        d.push_back(i);
+
+	const sjtu::deque<int> c = d;
+
+    for(sjtu::deque<int>::const_iterator it = c.cbegin(); it != c.cend(); it++){
+        (*it) = 1;
+        std::cout << *it << std::endl;
+	}
+
+    return 0;
 }
